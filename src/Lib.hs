@@ -16,6 +16,7 @@ module Lib ( -- * All final paper checkers, plus new checker heap oob
            , userInput -- * For main
            , doUserInputCheck -- * For testing
            , uaf -- * For main
+           , df -- * For main
              -- * Run your own static or symbolic checking
            , checkFiles
            , checkFile
@@ -27,6 +28,7 @@ import           Checkers.HeapOOBStatic
 import           Checkers.StaticConfigs.CheckerConfigs
 import qualified Checkers.SymexConfigs.CheckerConfigs  as SymConfigs
 import           Checkers.UAFStatic
+import           Checkers.DFStatic
 import           Checkers.UninitStatic
 import           Checkers.UserInputStatic
 import           Control.Concurrent.MVar
@@ -172,6 +174,32 @@ doUAFCheck (UAFBug fp fname path _ var ty _) = do
   modInfo <- makeModuleInfo fp
   let staticPath = makeIntraproStaticPath modInfo fname path
   symexPath (SymConfigs.uafSymexConfig var ty) [fname] [modInfo] staticPath
+
+
+--
+-- DF checker
+--
+
+-- | Run the DF static and symbolic checker
+df :: FilePath
+    -> [String]
+    -> IO ()
+df fpath extns = do
+  candidates <- checkFiles dfConfig fpath extns
+  candidateGroup <- new
+
+  forM_ candidates $ \bug ->
+    void $ forkIO candidateGroup $ E.handle printHandler $ do
+      -- L.log L.INFO $ "Symbolically checking static alert: " ++ show bug
+      attackResult <- doDFCheck bug
+      showDFResult bug attackResult
+  wait candidateGroup
+
+doDFCheck :: DFBug -> IO SolverResult
+doDFCheck (DFBug fp fname path lineno var) = do
+  modInfo <- makeModuleInfo fp
+  let staticPath = makeIntraproStaticPath modInfo fname path
+  symexPath (SymConfigs.dfSymexConfig var) [fname] [modInfo] staticPath
 
 --
 -- Making static paths

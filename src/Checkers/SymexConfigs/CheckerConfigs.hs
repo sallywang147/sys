@@ -114,6 +114,30 @@ uafSymexConfig _ ty =
          }
 
 
+dfSymexConfig :: Name -> Type -> Config Bool
+dfSymexConfig _ ty =
+  Config { symexContents = const True
+         , symexAST = const True
+         , symexDefn = const True
+         , symexPath = const True
+         , canAlias = False
+         , memoryLayout = True
+         , callsOn = False
+         , returnFollowOn = False
+         , symexShadow = True
+         , outputResult = const $ return ()
+         , symexRefinements = []
+         , pathTransform = id
+         , pathLength = 20
+         , arrayBound = 20
+         , oobOk = True
+         , timeout = 60
+         , preAttack = Nothing
+         , postAttacks = [uafPostAttack ty]
+         , initializer = setAttackerState False
+         , verbose = True
+        }
+
 -- | For the backend tests
 testConfig :: Config DummyState
 testConfig =

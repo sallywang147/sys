@@ -7,6 +7,7 @@ module Utils (
     , showMallocResult
     , showUserInputResult
     , showUAFResult
+    , showDFResult
     , showNegBug
     ) where
 import           Checkers.ConcreteOOBStatic
@@ -14,6 +15,7 @@ import           Checkers.HeapOOBStatic
 import           Checkers.UAFStatic
 import           Checkers.UninitStatic
 import           Checkers.UserInputStatic
+import           Checkers.DFStatic
 import           Control.Monad
 import           Prelude                    hiding (log, pred, readFile)
 import           Symex.Symex
@@ -108,6 +110,13 @@ showUAFResult (UAFBug fp fname path lineno var _ freename) result = when (isSat 
                      , show fname, "of", show fp, "on"
                      , "line", show lineno, "on path:", show path
                      , "with free function", show freename
+                     ]
+
+showDFResult :: DFBug -> SolverResult -> IO ()
+showDFResult (DFBug fp fname path lineno var) result = when (isSat result) $
+  printBug $ unwords ["DF bug:", "Variable ", show var, "in function"
+                     , show fname, "of", show fp, "on"
+                     , "line", show lineno, "on path:", show path
                      ]
 
 

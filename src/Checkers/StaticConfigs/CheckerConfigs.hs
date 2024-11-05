@@ -4,6 +4,7 @@ import           Checkers.HeapOOBStatic
 import           Checkers.UAFStatic
 import           Checkers.UninitStatic
 import           Checkers.UserInputStatic
+import           Checkers.DFStatic
 import qualified Data.ByteString            as B
 import           Data.ByteString.UTF8       (fromString)
 import           Data.List                  (isInfixOf)
@@ -120,3 +121,30 @@ uafConfig =
         isFree f = "free" `isInfixOf` show f ||
                    "_ZdlPv" `isInfixOf` show f ||
                    "_ZdaPv" `isInfixOf` show f
+
+dfConfig :: CheckerConfig DFState DFBug
+dfConfig =
+  CheckerConfig { cfgShouldCheckFile = \f -> isFreeB f
+                , cfgShouldCheckModule = \m -> isFree m
+                , cfgShouldCheckFunction = \f -> isFree f
+                , cfgVerbose = True
+                , cfgBlockBound = 15
+                , cfgLoopBound = 1
+                , cfgDebugPath = Nothing
+                , cfgAccumState = False
+                , cfgStartState = blankDFState
+                , cfgCheck = dfCheck
+                , cfgInitialAction = return ()
+                , cfgFinalAction = return ()
+                , cfgDieOnBug = False
+                , cfgGetStarts = startAtTop
+                , cfgGoBackBy = 0
+                }
+  where
+    isFreeB f = fromString "free" `B.isInfixOf` f ||
+                fromString "_ZdlPv" `B.isInfixOf` f ||
+                fromString "_ZdaPv" `B.isInfixOf` f
+
+    isFree f = "free" `isInfixOf` show f ||
+               "_ZdlPv" `isInfixOf` show f ||
+               "_ZdaPv" `isInfixOf` show f
